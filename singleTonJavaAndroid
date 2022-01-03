@@ -1,0 +1,28 @@
+package com.example.google_maps_java;
+
+import android.app.Application;
+import android.location.Location;
+
+import java.util.ArrayList;
+import java.util.List;
+
+//for this to work also make sure add line in manifest file.
+//application tab name=".MyApplication">
+public class MyApplication extends Application {
+
+    //singleton object is only created once as instance and used by all activities
+    private static MyApplication singleTon;
+
+    private List<Location> savedLocaitons;
+
+    public MyApplication getInsatnce(){
+        return singleTon;
+    }
+
+    public void onCreate(){
+        super.onCreate();
+        singleTon=this;
+        savedLocaitons=new ArrayList<>();
+    }
+}
+
