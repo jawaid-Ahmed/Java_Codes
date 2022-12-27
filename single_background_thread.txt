@@ -1,0 +1,14 @@
+new Thread(new Runnable() {
+  @Override
+  public void run() {
+    try {
+      URL myUrl = new URL(url);
+      URLConnection urlConnection = myUrl.openConnection();
+      urlConnection.connect();
+      int file_size = urlConnection.getContentLength();
+      Log.i("sasa", "file_size = " + file_size);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+}).start();

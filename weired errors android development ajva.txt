@@ -1,0 +1,12 @@
+1) intent data passing not working for specific activity android
+Ans:  activity tag manifest remove (android:launchMode="singleTast")
+
+2)loading files from other android version storages but android 10
+Ans:
+<manifest ... >
+<!-- This attribute is "false" by default on apps targeting
+     Android 10 or higher. -->
+  <application android:requestLegacyExternalStorage="true" ... >
+    ...
+  </application>
+</manifest>

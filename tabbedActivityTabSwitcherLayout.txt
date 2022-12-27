@@ -1,0 +1,249 @@
+package com.jawaid.downloaddb;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import de.mrapp.android.tabswitcher.AddTabButtonListener;
+import de.mrapp.android.tabswitcher.Animation;
+import de.mrapp.android.tabswitcher.LayoutPolicy;
+import de.mrapp.android.tabswitcher.RevealAnimation;
+import de.mrapp.android.tabswitcher.SwipeAnimation;
+import de.mrapp.android.tabswitcher.Tab;
+import de.mrapp.android.tabswitcher.TabSwitcher;
+import de.mrapp.android.tabswitcher.TabSwitcherListener;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.animation.LinearInterpolator;
+import android.widget.Toast;
+
+import com.google.android.material.tabs.TabLayout;
+
+import static androidx.core.os.LocaleListCompat.create;
+
+public class TabbedActivity extends AppCompatActivity implements TabSwitcherListener {
+
+    TabSwitcher tabSwitcher;
+
+    @SuppressLint("ResourceType")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_tabbed);
+
+        tabSwitcher =findViewById(R.id.tab_switcher);
+        //Toolbar toolbar=findViewById(R.id.toolbar);
+        //setSupportActionBar(toolbar);
+
+        ViewCompat.setOnApplyWindowInsetsListener(tabSwitcher, createWindowInsetsListener());
+        tabSwitcher.setDecorator(new Decorator());
+        tabSwitcher.addListener(this);
+        tabSwitcher.showToolbars(true);
+
+
+        createTabe("title");
+        createTabe("title2");
+        createTabe("title3");
+        createTabe("title3");
+        createTabe("title3");
+        tabSwitcher.showSwitcher();
+
+        tabSwitcher.showAddTabButton(createAddTabButtonListener());
+        tabSwitcher.setToolbarNavigationIcon(R.drawable.ic_baseline_filter,createAddTabListener());
+        TabSwitcher.setupWithMenu(tabSwitcher,createTabSwitcherButtonListener());
+        //Toast.makeText(TabbedActivity.this,tabSwitcher.isAddTabButtonShown()+"",Toast.LENGTH_SHORT).show();
+        inflateMenu();
+
+    }
+
+    private View.OnClickListener createAddTabListener(){
+        return new View.OnClickListener(){
+            @Override
+            public void onClick(final View view) {
+
+                int index=tabSwitcher.getCount();
+                Animation animation=createRevelAnimation();
+                tabSwitcher.addTab(tabSwitcher.getTab(index),0,animation);
+            }
+
+
+        };
+
+    }
+
+    private Animation createRevelAnimation(){
+        float x=0;
+        float y=0;
+        View view=getNavigationMenuItem();
+
+        if (view!=null){
+            int[] location=new int[2];
+            view.getLocationInWindow(location);
+            x=location[0]+(view.getWidth() / 2f);
+            y=location[1]+(view.getHeight() / 2f);
+        }
+
+        return new RevealAnimation.Builder().setX(x).setY(y).create();
+    }
+
+	  @Nullable
+    private View getNavigationMenuItem() {
+        Toolbar[] toolbars = tabSwitcher.getToolbars();
+
+        if (toolbars != null) {
+            Toolbar toolbar = toolbars.length > 1 ? toolbars[1] : toolbars[0];
+            int size = toolbar.getChildCount();
+
+            for (int i = 0; i < size; i++) {
+                View child = toolbar.getChildAt(i);
+
+                if (child instanceof ImageButton) {
+                    return child;
+                }
+            }
+        }
+
+        return null;
+    }
+
+
+    private AddTabButtonListener createAddTabButtonListener() {
+
+    }
+
+    private void inflateMenu(){
+        tabSwitcher.inflateToolbarMenu(tabSwitcher.getCount() > 0 ?R.menu.tab_switcher_toolbar_menu:R.menu.menu_scrolling,createToolbarmenuListener());
+    }
+
+    private Toolbar.OnMenuItemClickListener createToolbarmenuListener() {
+
+        return null;
+    }
+
+    private OnApplyWindowInsetsListener createWindowInsetsListener() {
+        return null;
+    }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.tab_switcher_toolbar_menu, menu);
+        tabSwitcher.setupWithMenu(tabSwitcher, menu, new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(TabbedActivity.this,"Settings",Toast.LENGTH_SHORT).show();
+            } /* ... */ });
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        if (item.getItemId()==R.id.action_settings){
+            Toast.makeText(TabbedActivity.this,"Settings",Toast.LENGTH_SHORT).show();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    private void createTabe(String title) {
+        Tab tab = new Tab("Title");
+        tab.setCloseable(true);
+        tab.setIcon(R.drawable.ic_baseline_filter);
+        tab.setIconTint(ContextCompat.getColor(this, android.R.color.black));
+        tab.setBackgroundColor(ContextCompat.getColor(this, R.color.tab_background_color));
+        tab.setContentBackgroundColor(ContextCompat.getColor(this, R.color.tab_content_background_color));
+        tab.setTitleTextColor(ContextCompat.getColor(this, R.color.tab_title_text_color));
+        tab.setCloseButtonIcon(R.drawable.ic_baseline_close_24);
+        tab.setCloseButtonIconTint(ContextCompat.getColor(this, android.R.color.black));
+        tab.setParameters(new Bundle());
+        tab.addCallback(new Tab.Callback() {
+            @Override
+            public void onTitleChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onIconChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onCloseableChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onCloseButtonIconChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onBackgroundColorChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onContentBackgroundColorChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onTitleTextColorChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onProgressBarVisibilityChanged(@NonNull Tab tab) {
+
+            }
+
+            @Override
+            public void onProgressBarColorChanged(@NonNull Tab tab) {
+
+            } /* ... */ });
+        tabSwitcher.addTab(tab);
+    }
+
+    @Override
+    public void onSwitcherShown(@NonNull TabSwitcher tabSwitcher) {
+
+    }
+
+    @Override
+    public void onSwitcherHidden(@NonNull TabSwitcher tabSwitcher) {
+
+    }
+
+    @Override
+    public void onSelectionChanged(@NonNull TabSwitcher tabSwitcher, int selectedTabIndex, @Nullable Tab selectedTab) {
+
+    }
+
+    @Override
+    public void onTabAdded(@NonNull TabSwitcher tabSwitcher, int index, @NonNull Tab tab, @NonNull Animation animation) {
+
+        
+    }
+
+    @Override
+    public void onTabRemoved(@NonNull TabSwitcher tabSwitcher, int index, @NonNull Tab tab, @NonNull Animation animation) {
+
+    }
+
+    @Override
+    public void onAllTabsRemoved(@NonNull TabSwitcher tabSwitcher, @NonNull Tab[] tabs, @NonNull Animation animation) {
+
+    }
+}

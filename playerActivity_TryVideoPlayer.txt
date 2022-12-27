@@ -1,0 +1,306 @@
+package com.example.tryvideoplayer;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.mediarouter.app.MediaRouteButton;
+
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.Point;
+import android.media.AudioManager;
+import android.media.MediaCodec;
+import android.media.MediaPlayer;
+import android.media.session.PlaybackState;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.media.MediaBrowserCompat;
+import android.view.Display;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.exoplayer.ExoPlayer;
+import com.google.android.exoplayer.MediaCodecAudioTrackRenderer;
+import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
+import com.google.android.exoplayer.TrackRenderer;
+import com.google.android.exoplayer.chunk.Format;
+import com.google.android.exoplayer.dash.mpd.MediaPresentationDescription;
+import com.google.android.exoplayer.dash.mpd.MediaPresentationDescriptionParser;
+import com.google.android.exoplayer.extractor.ExtractorSampleSource;
+import com.google.android.exoplayer.hls.HlsSampleSource;
+import com.google.android.exoplayer.upstream.Allocator;
+import com.google.android.exoplayer.upstream.DataSource;
+import com.google.android.exoplayer.upstream.DefaultAllocator;
+import com.google.android.exoplayer.upstream.DefaultUriDataSource;
+import com.google.android.exoplayer.upstream.UriDataSource;
+import com.google.android.exoplayer.util.ManifestFetcher;
+import com.google.android.exoplayer.util.PlayerControl;
+import com.google.android.gms.cast.framework.CastContext;
+import com.google.android.gms.cast.framework.CastSession;
+import com.google.android.gms.cast.framework.SessionManager;
+
+import java.io.IOException;
+
+import static android.view.View.*;
+
+public class PlayerActivity extends AppCompatActivity implements HlsSampleSource.EventListener, OnClickListener,SurfaceHolder.Callback{
+
+    private static final String TAG = "VideoPlayer";
+
+    public static final int RENDERER_COUNT = 2;
+    public static final int TYPE_AUDIO = 1;
+    private ExoPlayer player;
+    private SurfaceView surface;
+    private String[] video_url, video_type, video_title;
+    private int currentTrackIndex;
+    private Handler mainHandler;
+    //private HpLib_RendererBuilder hpLibRendererBuilder;
+    private TrackRenderer videoRenderer;
+    private LinearLayout root,top_controls, middle_panel, unlock_panel, bottom_controls,seekBar_center_text,onlySeekbar;
+    private double seekSpeed = 0;
+    public static final int TYPE_VIDEO = 0;
+    private View decorView;
+    private int uiImmersiveOptions;
+    private RelativeLayout loadingPanel;
+    private Runnable updatePlayer,hideControls;
+
+    //Implementing the top bar
+    private ImageButton btn_back;
+    private TextView txt_title;
+
+    //Implementing Chromecast
+    public MediaRouteButton mMediaRouteButton;
+    private CastContext mCastContext;
+    private CastSession mCastSession;
+    private PlaybackState mPlaybackState;
+    private SessionManager mSessionManager;
+    private MediaBrowserCompat.MediaItem mSelectedMedia;
+
+    //Implementing current time, total time and seekbar
+    private TextView txt_ct,txt_td;
+    private SeekBar seekBar;
+    private PlayerControl playerControl;
+
+//second
+//private ControlsMode controlsState;
+
+    private ImageButton btn_play;
+    private ImageButton btn_pause;
+    private ImageButton btn_fwd;
+    private ImageButton btn_rev;
+    private ImageButton btn_next;
+    private ImageButton btn_prev;
+
+    private ImageButton btn_lock;
+    private ImageButton btn_unlock;
+    private ImageButton btn_settings;
+
+
+    private Display display;
+    private Point size;
+
+    private int sWidth,sHeight;
+    private float baseX, baseY;
+    private long diffX, diffY;
+    private int calculatedTime;
+    private String seekDur;
+    private Boolean tested_ok = false;
+    private Boolean screen_swipe_move = false;
+    private boolean immersiveMode, intLeft, intRight, intTop, intBottom, finLeft, finRight, finTop, finBottom;
+    private static final int MIN_DISTANCE = 150;
+    private ContentResolver cResolver;
+    private Window window;
+    private LinearLayout volumeBarContainer, brightnessBarContainer,brightness_center_text, vol_center_text;
+    private ProgressBar volumeBar, brightnessBar;
+    private TextView vol_perc_center_text, brigtness_perc_center_text,txt_seek_secs,txt_seek_currTime;
+    private ImageView volIcon, brightnessIcon, vol_image, brightness_image;
+    private int brightness, mediavolume,device_height,device_width;
+    private AudioManager audioManager;
+    SurfaceView surfaceView;
+    SurfaceHolder surfaceHolder;
+    MediaPlayer mediaPlayer;
+    private View v;
+    int position;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        setContentView(R.layout.activity_player);
+
+
+        position=getIntent().getIntExtra("position",-1);
+
+
+
+        InitializeingComponents();
+        surfaceHolder=surfaceView.getHolder();
+        surfaceHolder.addCallback(this);
+        surfaceView.setKeepScreenOn(true);
+        mediaPlayer=new MediaPlayer();
+
+        btn_back.setOnClickListener(this);
+        btn_pause.setOnClickListener(this);
+        btn_play.setOnClickListener(this);
+        btn_rev.setOnClickListener(this);
+        btn_fwd.setOnClickListener(this);
+
+        preparePlayer();
+
+
+    }
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btn_back:
+                killPlayer();
+                finish();
+                break;
+            case R.id.btn_pause:
+                if (playerControl.isPlaying()){
+                    playerControl.pause();
+                    btn_pause.setVisibility(View.GONE);
+                    btn_play.setVisibility(View.VISIBLE);
+                }
+                break;
+            case R.id.btn_play:
+                if (playerControl.isPlaying()){
+                    playerControl.start();
+                    btn_play.setVisibility(View.GONE);
+                    btn_pause.setVisibility(View.VISIBLE);
+                }
+                break;
+            case R.id.btn_rev:
+                Toast.makeText(PlayerActivity.this,"ReV",Toast.LENGTH_SHORT).show();
+                //player.seekTo(player.getCurrentPosition()-30000);
+                break;
+            case R.id.btn_fwd:
+                Toast.makeText(PlayerActivity.this,"ReV",Toast.LENGTH_SHORT).show();
+               // player.seekTo(player.getCurrentPosition()+30000);
+                break;
+
+
+
+        }
+    }
+
+    private void killPlayer() {
+        if (player !=null){
+            player.release();
+        }
+    }
+
+    private void InitializeingComponents() {
+        btn_back = findViewById(R.id.btn_back);
+        btn_play =  findViewById(R.id.btn_play);
+        btn_pause =  findViewById(R.id.btn_pause);
+        btn_fwd =  findViewById(R.id.btn_fwd);
+        btn_rev =  findViewById(R.id.btn_rev);
+        btn_prev =  findViewById(R.id.btn_prev);
+        btn_next = findViewById(R.id.btn_next);
+        btn_lock =  findViewById(R.id.btn_lock);
+        btn_unlock =  findViewById(R.id.btn_unlock);
+        btn_settings =  findViewById(R.id.btn_settings);
+
+
+
+        txt_seek_secs =  findViewById(R.id.txt_seek_secs);
+        txt_seek_currTime =  findViewById(R.id.txt_seek_currTime);
+        seekBar_center_text = findViewById(R.id.seekbar_center_text);
+        onlySeekbar = findViewById(R.id.seekbar_time);
+        top_controls = findViewById(R.id.top);
+        bottom_controls =findViewById(R.id.controls);
+
+        vol_perc_center_text =  findViewById(R.id.vol_perc_center_text);
+        brigtness_perc_center_text =findViewById(R.id.brigtness_perc_center_text);
+        volumeBar = findViewById(R.id.volume_slider);
+        brightnessBar = findViewById(R.id.brightness_slider);
+        volumeBarContainer = (LinearLayout) findViewById(R.id.volume_slider_container);
+        brightnessBarContainer = (LinearLayout) findViewById(R.id.brightness_slider_container);
+        brightness_center_text = (LinearLayout) findViewById(R.id.brightness_center_text);
+        vol_center_text = (LinearLayout) findViewById(R.id.vol_center_text);
+
+        volIcon = (ImageView) findViewById(R.id.volIcon);
+        brightnessIcon = (ImageView) findViewById(R.id.brightnessIcon);
+        vol_image = (ImageView) findViewById(R.id.vol_image);
+        brightness_image = (ImageView) findViewById(R.id.brightness_image);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+
+    }
+
+    @Override
+    public void onLoadStarted(int sourceId, long length, int type, int trigger, Format format, long mediaStartTimeMs, long mediaEndTimeMs) {
+
+    }
+
+    @Override
+    public void onLoadCompleted(int sourceId, long bytesLoaded, int type, int trigger, Format format, long mediaStartTimeMs, long mediaEndTimeMs, long elapsedRealtimeMs, long loadDurationMs) {
+
+    }
+
+    @Override
+    public void onLoadCanceled(int sourceId, long bytesLoaded) {
+
+    }
+
+    @Override
+    public void onLoadError(int sourceId, IOException e) {
+
+    }
+
+    @Override
+    public void onUpstreamDiscarded(int sourceId, long mediaStartTimeMs, long mediaEndTimeMs) {
+
+    }
+
+    @Override
+    public void onDownstreamFormatChanged(int sourceId, Format format, int trigger, long mediaTimeMs) {
+
+    }
+
+
+    private void preparePlayer(){
+
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        mediaPlayer.setDisplay(surfaceHolder);
+        try {
+            mediaPlayer.setDataSource(MainActivity.filesList.get(position).getPath());
+            mediaPlayer.prepare();
+            mediaPlayer.setOnPreparedListener((MediaPlayer.OnPreparedListener) this);
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+
+    }
+}

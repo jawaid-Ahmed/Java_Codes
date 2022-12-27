@@ -1,0 +1,8 @@
+Default interface methods are only supported starting with Android N (--min-api 24): void android.arch.lifecycle.DefaultLifecycleObserver.onCreate(android.arch.lifecycle.LifecycleOwner)
+Message{kind=ERROR, text=Default interface methods are only supported starting with Android N (--min-api 24): void android.arch.lifecycle.DefaultLifecycleObserver.onCreate(android.arch.lifecycle.LifecycleOwner), sources=[Unknown source file], tool name=Optional.of(D8)}
+
+Answer:
+compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }

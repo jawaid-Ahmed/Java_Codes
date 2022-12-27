@@ -1,0 +1,27 @@
+public static ArrayList<File> getAudioLibrary(Context context) {
+
+        ArrayList<File> list = new ArrayList<>();
+
+        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+
+        String data[] = new String[]{MediaStore.Audio.Media.DATA};
+
+        String selection = MediaStore.Audio.Media.IS_MUSIC;
+
+	//for video or images just change Audio to video and images
+        Cursor cursor = new CursorLoader(context, uri, data, selection, null, null).loadInBackground();
+
+        if (cursor != null) {
+
+            while (cursor.moveToNext()) {
+
+                File file = new File(cursor.getString(cursor.getColumnIndex(data[0])));
+
+                if (file.exists()) list.add(file);
+            }
+
+            cursor.close();
+        }
+
+        return list;
+    }

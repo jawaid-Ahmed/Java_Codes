@@ -1,0 +1,55 @@
+
+
+    <LinearLayout
+        android:id="@+id/fitthree"
+        android:layout_width="match_parent"
+        android:layout_height="175dp"
+        android:layout_gravity="left">
+
+        <LinearLayout
+            android:layout_width="176dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="bottom">
+
+            <Button
+                android:layout_width="176dp"
+                android:layout_height="72dp"
+                android:background="@drawable/bgbtnadd"
+                android:text="CHEST" />
+        </LinearLayout>
+
+
+        <ImageView
+            android:layout_width="229dp"
+            android:layout_height="164dp"
+            android:src="@drawable/im" />
+
+    </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fitfour"
+            android:layout_width="match_parent"
+            android:layout_height="175dp"
+            android:layout_gravity="left">
+
+            <LinearLayout
+                android:layout_width="176dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="bottom">
+
+                <Button
+                    android:layout_width="176dp"
+                    android:layout_height="72dp"
+                    android:background="@drawable/bgbtnadd"
+                    android:text="CHEST" />
+            </LinearLayout>
+
+
+            <ImageView
+                android:layout_width="236dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/im" />
+
+        </LinearLayout>
